@@ -35,6 +35,7 @@
 
     let state = {
         settings: {
+            numExamples: 3,
             playbackRate: 0.75,
             showEnglish: 'onhover',
             showJapanese: 'always',
@@ -134,14 +135,14 @@
     }
 
     function addAnimeSentences() {
-        let type = state.item.type; // TODO 'vocabulary' only?
-        let queryString = state.item.characters;
+        // let type = state.item.type; // TODO 'vocabulary' only?
+        let queryString = state.item.characters.replace('〜', '');  // "counter" kanji
         // console.log(state)
 
         let parentEl = document.createElement("div");
         parentEl.setAttribute("id", 'anime-sentences-parent')
 
-        let header = document.createElement("h2");
+        let header = state.item.on !== 'itemPage' ? document.createElement("h2") : document.createElement("h3");
         header.innerText = 'Anime Sentences'
 
         const settingsBtn = document.createElement("i");
@@ -157,10 +158,10 @@
         state.sentencesEl = sentencesEl
 
         if (state.item.injector) {
-            if (state.item.on === 'itemPage') {
-                state.item.injector.append(null, parentEl)
-            } else { // lesson
+            if (state.item.on === 'lesson') {
                 state.item.injector.appendAtTop(null, parentEl)
+            } else { // itemPage, review
+                state.item.injector.append(null, parentEl)
             }
         }
 
@@ -205,7 +206,7 @@
         if (examples.length === 0) {
             html = 'No sentences found.'
         } else {
-            let lim = Math.min(examples.length, 3)
+            let lim = Math.min(examples.length, state.settings.numExamples)
 
             for (var i = 0; i < lim; i++) {
                 const example = examples[i]
@@ -278,6 +279,15 @@
                 general: {
                     type: "section",
                     label: "General"
+                },
+                numExamples: {
+                    type: "number",
+                    label: "Number of Examples",
+                    step: 1,
+                    min: 1,
+                    max: 10,
+                    hover_tip: "The maximum number of sentences to show for each word.",
+                    default: state.settings.numExamples
                 },
                 playbackRate: {
                     type: "number",
