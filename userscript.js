@@ -146,7 +146,7 @@
         header.innerText = 'Anime Sentences'
 
         const settingsBtn = document.createElement("i");
-        settingsBtn.setAttribute("class", "icon-gear");
+        settingsBtn.setAttribute("class", "fa fa-gear");
         settingsBtn.setAttribute("style", "font-size: 14px; cursor: pointer; vertical-align: middle; margin-left: 10px;");
         settingsBtn.onclick = openSettings
         let sentencesEl = document.createElement("div");
