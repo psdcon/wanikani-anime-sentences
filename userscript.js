@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Wanikani Anime Sentences
+// @description  Adds example sentences from anime movies and shows for vocabulary
 // @version      1.0.0
-// @namespace    psdcon
 // @author       psdcon
-// @description  This script is in development
+// @namespace    wkanimesentences
 
 // @include     /^https://(www|preview).wanikani.com//
 // @match        https://www.wanikani.com/lesson/session
@@ -14,8 +14,6 @@
 // @match        https://preview.wanikani.com/vocabulary/*
 
 // @require     https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=969075
-// @require     file:///C:/Users/seanw/Documents/Code/wanikani-anime-sentences/userscript.js
-// @updateURL   https://github.com/psdcon/wanikani-anime-sentences/blob/main/userscript.js
 // @copyright   2021+, Paul Connolly
 // @license     MIT; http://opensource.org/licenses/MIT
 // @run-at      document-end
@@ -42,12 +40,13 @@
             showFurigana: 'onhover',
             filterWaniKaniLevel: true,
             filterGeneralAnime: {},
+            // All available Ghibli films enabled by default
             filterGhibli: {0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true},
         },
         item: null, // current vocab from wkinfo
-        userLevel: '', // most recent level_progression
-        immersionKitData: null, // cached so sentences can be rerendered after settings change
-        sentencesEl: null, // referenced so sentences can be rerendered after settings change
+        userLevel: '', // most recent level progression
+        immersionKitData: null, // cached so sentences can be re-rendered after settings change
+        sentencesEl: null, // referenced so sentences can be re-rendered after settings change
     };
 
     // Titles taken from https://www.immersionkit.com/information
@@ -95,7 +94,6 @@
         8: "When Marnie Was There",
     }
 
-    // Application start Point
     main();
 
     function main() {
@@ -112,7 +110,7 @@
             wkof
                 .ready("Apiv2,Settings")
                 .then(loadSettings)
-                .then(proccessLoadedSettings)
+                .then(processLoadedSettings)
                 .then(getLevel)
                 .then(callback);
         } else {
@@ -135,9 +133,7 @@
     }
 
     function addAnimeSentences() {
-        // let type = state.item.type; // TODO 'vocabulary' only?
-        let queryString = state.item.characters.replace('〜', '');  // "counter" kanji
-        // console.log(state)
+        let queryString = state.item.characters.replace('〜', '');  // for "counter" kanji
 
         let parentEl = document.createElement("div");
         parentEl.setAttribute("id", 'anime-sentences-parent')
@@ -266,12 +262,12 @@
         return wkof.Settings.load(scriptId, state.settings);
     }
 
-    function proccessLoadedSettings() {
+    function processLoadedSettings() {
         state.settings = wkof.settings[scriptId];
     }
 
     function openSettings() {
-        var config = {
+        let config = {
             script_id: scriptId,
             title: scriptName,
             on_save: updateSettings,
