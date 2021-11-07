@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Wanikani Anime Sentences
 // @description  Adds example sentences from anime movies and shows for vocabulary
-// @version      1.0.2
+// @version      1.1.0
 // @author       psdcon
 // @namespace    wkanimesentences
 
-// @include     /^https://(www|preview).wanikani.com//
+// @include      /^https://(www|preview).wanikani.com//
 // @match        https://www.wanikani.com/lesson/session
 // @match        https://www.wanikani.com/review/session
 // @match        https://www.wanikani.com/vocabulary/*
@@ -13,11 +13,11 @@
 // @match        https://preview.wanikani.com/review/session
 // @match        https://preview.wanikani.com/vocabulary/*
 
-// @require     https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=969075
-// @copyright   2021+, Paul Connolly
-// @license     MIT; http://opensource.org/licenses/MIT
-// @run-at      document-end
-// @grant       none
+// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=985948
+// @copyright    2021+, Paul Connolly
+// @license      MIT; http://opensource.org/licenses/MIT
+// @run-at       document-end
+// @grant        none
 // ==/UserScript==
 
 
@@ -33,7 +33,6 @@
 
     let state = {
         settings: {
-            numExamples: 3,
             playbackRate: 0.75,
             showEnglish: 'onhover',
             showJapanese: 'always',
@@ -134,8 +133,6 @@
     }
 
     function addAnimeSentences() {
-        let queryString = state.item.characters.replace('〜', '');  // for "counter" kanji
-
         let parentEl = document.createElement("div");
         parentEl.setAttribute("id", 'anime-sentences-parent')
 
@@ -162,20 +159,19 @@
             }
         }
 
+        const queryString = state.item.characters.replace('〜', '');  // for "counter" kanji
         const wkLevelFilter = state.settings.filterWaniKaniLevel ? state.userLevel : '';
-        let url = `https://api.immersionkit.com/look_up_dictionary?keyword=${queryString}&tags=&jlpt=&wk=${wkLevelFilter}&sort=None&category=anime`
+        let url = `https://api.immersionkit.com/look_up_dictionary?keyword=${queryString}&tags=&jlpt=&wk=${wkLevelFilter}&sort=shortness&category=anime`
         fetch(url)
             .then(response => response.json())
             .then(data => {
-                let examples = data.data[0].examples
-                examples.sort((a,b) => b.sentence.length - a.sentence.length)
-                state.immersionKitData = examples
+                state.immersionKitData = data.data[0].examples
                 renderSentences()
-            });
+            })
     }
 
     function getDesiredShows() {
-        // Convert settings dictionaries to list of titles
+        // Convert settings dictionaries to array of titles
         let titles = []
         for (const [key, value] of Object.entries(state.settings.filterGeneralAnime)) {
             if (value === true) {
@@ -195,6 +191,11 @@
         let examples = state.immersionKitData;
         let desiredTitles = getDesiredShows()
         examples = examples.filter(ex => desiredTitles.includes(ex.deck_name))
+        if (state.settings.sentenceLengthSort === 'asc') {
+            examples.sort((a, b) => a.sentence.length - b.sentence.length)
+        } else {
+            examples.sort((a, b) => b.sentence.length - a.sentence.length)
+        }
 
         let showJapanese = state.settings.showJapanese;
         let showEnglish = state.settings.showEnglish;
@@ -205,7 +206,7 @@
         if (examples.length === 0) {
             html = 'No sentences found.'
         } else {
-            let lim = Math.min(examples.length, state.settings.numExamples)
+            let lim = Math.min(examples.length, 50)
 
             for (var i = 0; i < lim; i++) {
                 const example = examples[i]
@@ -286,14 +287,15 @@
                     type: "section",
                     label: "General"
                 },
-                numExamples: {
-                    type: "number",
-                    label: "Number of Examples",
-                    step: 1,
-                    min: 1,
-                    max: 10,
-                    hover_tip: "The maximum number of sentences to show for each word.",
-                    default: state.settings.numExamples
+                sentenceLengthSort: {
+                    type: "dropdown",
+                    label: "Sentence Order",
+                    hover_tip: "",
+                    content: {
+                        asc: "Shortest first",
+                        desc: "Longest first"
+                    },
+                    default: state.settings.sentenceLengthSort
                 },
                 playbackRate: {
                     type: "number",
@@ -344,7 +346,7 @@
                 filterWaniKaniLevel: {
                     type: "checkbox",
                     label: "WaniKani Level",
-                    hover_tip: "Only show sentences appropriate for your current Wanikani level.",
+                    hover_tip: "Only show sentences with maximum 1 word outside of your current Wanikani level.",
                     default: state.settings.filterWaniKaniLevel,
                 },
                 filterGeneralAnime: {
@@ -384,50 +386,53 @@
     function createStyle() {
         const style = document.createElement("style");
         style.setAttribute("id", "anime-sentences-style");
+        // language=CSS
         style.innerHTML = `
-        .anime-example {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1em;
-            cursor: pointer;
-        }
+            #anime-sentences-parent > div {
+                overflow-y: auto;
+                max-height: 280px;
+            }
 
-        /* Make text and background color the same to hide text */
-        .anime-example-text .show-on-hover {
-            background: #ccc;
-            color: #ccc;
-        }
-        .anime-example-text .show-on-hover:hover {
-            background: inherit;
-            color: inherit
-        }
+            .anime-example {
+                display: flex;
+                align-items: center;
+                margin-bottom: 1em;
+                cursor: pointer;
+            }
 
-        /* Furigana hover*/
-        .anime-example-text .show-ruby-on-hover ruby rt {
-            visibility: hidden;
-        }
-        .anime-example-text:hover .show-ruby-on-hover ruby rt {
-            visibility: visible;
-        }
+            /* Make text and background color the same to hide text */
+            .anime-example-text .show-on-hover, .anime-example-text .show-on-click {
+                background: #ccc;
+                color: #ccc;
+            }
 
-        .show-on-click {
-            background: #ccc;
-            color: #ccc;
-        }
-        
-        .anime-example .title {
-            font-weight: 700;
-        }        
-        
-        .anime-example .ja {
-            font-size: 2em;
-        }
+            .anime-example-text .show-on-hover:hover {
+                background: inherit;
+                color: inherit
+            }
 
-        .anime-example img {
-            margin-right:1em;
-            max-width: 200px;
-        }
-    `;
+            /* Furigana hover*/
+            .anime-example-text .show-ruby-on-hover ruby rt {
+                visibility: hidden;
+            }
+
+            .anime-example-text:hover .show-ruby-on-hover ruby rt {
+                visibility: visible;
+            }
+
+            .anime-example .title {
+                font-weight: 700;
+            }
+
+            .anime-example .ja {
+                font-size: 2em;
+            }
+
+            .anime-example img {
+                margin-right: 1em;
+                max-width: 200px;
+            }
+        `;
 
         document.querySelector("head").append(style);
     }
