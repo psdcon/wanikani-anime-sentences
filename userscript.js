@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Anime Sentences
 // @description  Adds example sentences from anime movies and shows for vocabulary
-// @version      1.0.0
+// @version      1.0.2
 // @author       psdcon
 // @namespace    wkanimesentences
 
@@ -38,9 +38,10 @@
             showEnglish: 'onhover',
             showJapanese: 'always',
             showFurigana: 'onhover',
+            sentenceLengthSort: 'asc',
             filterWaniKaniLevel: true,
             filterGeneralAnime: {},
-            // All available Ghibli films enabled by default
+            // Ghibli films are enabled by default
             filterGhibli: {0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true},
         },
         item: null, // current vocab from wkinfo
@@ -162,13 +163,15 @@
         }
 
         const wkLevelFilter = state.settings.filterWaniKaniLevel ? state.userLevel : '';
-        let url = `https://api.immersionkit.com/look_up_dictionary?keyword=${queryString}&tags=&jlpt=&wk=${wkLevelFilter}&sort=Sentence+Length&category=anime`
+        let url = `https://api.immersionkit.com/look_up_dictionary?keyword=${queryString}&tags=&jlpt=&wk=${wkLevelFilter}&sort=None&category=anime`
         fetch(url)
             .then(response => response.json())
             .then(data => {
-                state.immersionKitData = data.data[0].examples
+                let examples = data.data[0].examples
+                examples.sort((a,b) => b.sentence.length - a.sentence.length)
+                state.immersionKitData = examples
                 renderSentences()
-            })
+            });
     }
 
     function getDesiredShows() {
@@ -217,12 +220,12 @@
         <div class="anime-example-text">
             <div class="title" title="${example.id}">${example.deck_name}</div>
             <div class="ja">
-                <span class="${showJapanese === 'onhover' ? 'show-on-hover' : ''} ${showFurigana === 'onhover' ? 'show-ruby-on-hover' : ''}">${japaneseText}</span>
+                <span class="${showJapanese === 'onhover' ? 'show-on-hover' : ''} ${showFurigana === 'onhover' ? 'show-ruby-on-hover' : ''}  ${showJapanese === 'onclick' ? 'show-on-click' : ''}">${japaneseText}</span>
                 <span><button class="audio-btn audio-idle"></button></span>
                 <audio src="${example.sound_url}"></audio>
             </div>
             <div class="en">
-                <span class="${showEnglish === 'onhover' ? 'show-on-hover' : ''}">${example.translation}</span>
+                <span class="${showEnglish === 'onhover' ? 'show-on-hover' : ''} ${showEnglish === 'onclick' ? 'show-on-click' : ''}">${example.translation}</span>
             </div>
         </div>
     </div>`
@@ -251,7 +254,14 @@
                 let audio = this.querySelector('audio')
                 audio.play()
             }
-        })
+        });
+
+        // Assing onclick function to .show-on-click elements
+        document.querySelectorAll(".show-on-click").forEach((a) => {
+            a.onclick = function () {
+                this.classList.toggle('show-on-click');
+            }
+        });
     }
 
     //--------------------------------------------------------------------------------------------------------------//
@@ -300,7 +310,8 @@
                     hover_tip: "When to show Japanese text. Hover enables transcribing a sentences first (play audio by clicking the image to avoid seeing the answer).",
                     content: {
                         always: "Always",
-                        onhover: "On Hover"
+                        onhover: "On Hover",
+                        onclick: "On Click",
                     },
                     default: state.settings.showJapanese
                 },
@@ -321,7 +332,8 @@
                     hover_tip: "Hover allows testing your understanding before seeing the answer.",
                     content: {
                         always: "Always",
-                        onhover: "On Hover"
+                        onhover: "On Hover",
+                        onclick: "On Click",
                     },
                     default: state.settings.showEnglish
                 },
@@ -385,7 +397,7 @@
             background: #ccc;
             color: #ccc;
         }
-        .anime-example-text:hover .show-on-hover {
+        .anime-example-text .show-on-hover:hover {
             background: inherit;
             color: inherit
         }
@@ -396,6 +408,11 @@
         }
         .anime-example-text:hover .show-ruby-on-hover ruby rt {
             visibility: visible;
+        }
+
+        .show-on-click {
+            background: #ccc;
+            color: #ccc;
         }
         
         .anime-example .title {
