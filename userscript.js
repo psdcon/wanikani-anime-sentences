@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Wanikani Anime Sentences
 // @description  Adds example sentences from anime movies and shows for vocabulary
-// @version      1.0.0
+// @version      1.1.0
 // @author       psdcon
 // @namespace    wkanimesentences
 
-// @include     /^https://(www|preview).wanikani.com//
+// @include      /^https://(www|preview).wanikani.com//
 // @match        https://www.wanikani.com/lesson/session
 // @match        https://www.wanikani.com/review/session
 // @match        https://www.wanikani.com/vocabulary/*
@@ -13,11 +13,11 @@
 // @match        https://preview.wanikani.com/review/session
 // @match        https://preview.wanikani.com/vocabulary/*
 
-// @require     https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=969075
-// @copyright   2021+, Paul Connolly
-// @license     MIT; http://opensource.org/licenses/MIT
-// @run-at      document-end
-// @grant       none
+// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=985948
+// @copyright    2021+, Paul Connolly
+// @license      MIT; http://opensource.org/licenses/MIT
+// @run-at       document-end
+// @grant        none
 // ==/UserScript==
 
 
@@ -33,14 +33,14 @@
 
     let state = {
         settings: {
-            numExamples: 3,
             playbackRate: 0.75,
             showEnglish: 'onhover',
             showJapanese: 'always',
             showFurigana: 'onhover',
+            sentenceLengthSort: 'asc',
             filterWaniKaniLevel: true,
             filterGeneralAnime: {},
-            // All available Ghibli films enabled by default
+            // Ghibli films are enabled by default
             filterGhibli: {0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true},
         },
         item: null, // current vocab from wkinfo
@@ -133,8 +133,6 @@
     }
 
     function addAnimeSentences() {
-        let queryString = state.item.characters.replace('〜', '');  // for "counter" kanji
-
         let parentEl = document.createElement("div");
         parentEl.setAttribute("id", 'anime-sentences-parent')
 
@@ -161,8 +159,9 @@
             }
         }
 
+        const queryString = state.item.characters.replace('〜', '');  // for "counter" kanji
         const wkLevelFilter = state.settings.filterWaniKaniLevel ? state.userLevel : '';
-        let url = `https://api.immersionkit.com/look_up_dictionary?keyword=${queryString}&tags=&jlpt=&wk=${wkLevelFilter}&sort=Sentence+Length&category=anime`
+        let url = `https://api.immersionkit.com/look_up_dictionary?keyword=${queryString}&tags=&jlpt=&wk=${wkLevelFilter}&sort=shortness&category=anime`
         fetch(url)
             .then(response => response.json())
             .then(data => {
@@ -172,7 +171,7 @@
     }
 
     function getDesiredShows() {
-        // Convert settings dictionaries to list of titles
+        // Convert settings dictionaries to array of titles
         let titles = []
         for (const [key, value] of Object.entries(state.settings.filterGeneralAnime)) {
             if (value === true) {
@@ -192,6 +191,11 @@
         let examples = state.immersionKitData;
         let desiredTitles = getDesiredShows()
         examples = examples.filter(ex => desiredTitles.includes(ex.deck_name))
+        if (state.settings.sentenceLengthSort === 'asc') {
+            examples.sort((a, b) => a.sentence.length - b.sentence.length)
+        } else {
+            examples.sort((a, b) => b.sentence.length - a.sentence.length)
+        }
 
         let showJapanese = state.settings.showJapanese;
         let showEnglish = state.settings.showEnglish;
@@ -202,7 +206,7 @@
         if (examples.length === 0) {
             html = 'No sentences found.'
         } else {
-            let lim = Math.min(examples.length, state.settings.numExamples)
+            let lim = Math.min(examples.length, 50)
 
             for (var i = 0; i < lim; i++) {
                 const example = examples[i]
@@ -217,12 +221,12 @@
         <div class="anime-example-text">
             <div class="title" title="${example.id}">${example.deck_name}</div>
             <div class="ja">
-                <span class="${showJapanese === 'onhover' ? 'show-on-hover' : ''} ${showFurigana === 'onhover' ? 'show-ruby-on-hover' : ''}">${japaneseText}</span>
+                <span class="${showJapanese === 'onhover' ? 'show-on-hover' : ''} ${showFurigana === 'onhover' ? 'show-ruby-on-hover' : ''}  ${showJapanese === 'onclick' ? 'show-on-click' : ''}">${japaneseText}</span>
                 <span><button class="audio-btn audio-idle"></button></span>
                 <audio src="${example.sound_url}"></audio>
             </div>
             <div class="en">
-                <span class="${showEnglish === 'onhover' ? 'show-on-hover' : ''}">${example.translation}</span>
+                <span class="${showEnglish === 'onhover' ? 'show-on-hover' : ''} ${showEnglish === 'onclick' ? 'show-on-click' : ''}">${example.translation}</span>
             </div>
         </div>
     </div>`
@@ -251,7 +255,14 @@
                 let audio = this.querySelector('audio')
                 audio.play()
             }
-        })
+        });
+
+        // Assing onclick function to .show-on-click elements
+        document.querySelectorAll(".show-on-click").forEach((a) => {
+            a.onclick = function () {
+                this.classList.toggle('show-on-click');
+            }
+        });
     }
 
     //--------------------------------------------------------------------------------------------------------------//
@@ -276,14 +287,15 @@
                     type: "section",
                     label: "General"
                 },
-                numExamples: {
-                    type: "number",
-                    label: "Number of Examples",
-                    step: 1,
-                    min: 1,
-                    max: 10,
-                    hover_tip: "The maximum number of sentences to show for each word.",
-                    default: state.settings.numExamples
+                sentenceLengthSort: {
+                    type: "dropdown",
+                    label: "Sentence Order",
+                    hover_tip: "",
+                    content: {
+                        asc: "Shortest first",
+                        desc: "Longest first"
+                    },
+                    default: state.settings.sentenceLengthSort
                 },
                 playbackRate: {
                     type: "number",
@@ -300,7 +312,8 @@
                     hover_tip: "When to show Japanese text. Hover enables transcribing a sentences first (play audio by clicking the image to avoid seeing the answer).",
                     content: {
                         always: "Always",
-                        onhover: "On Hover"
+                        onhover: "On Hover",
+                        onclick: "On Click",
                     },
                     default: state.settings.showJapanese
                 },
@@ -321,7 +334,8 @@
                     hover_tip: "Hover allows testing your understanding before seeing the answer.",
                     content: {
                         always: "Always",
-                        onhover: "On Hover"
+                        onhover: "On Hover",
+                        onclick: "On Click",
                     },
                     default: state.settings.showEnglish
                 },
@@ -332,7 +346,7 @@
                 filterWaniKaniLevel: {
                     type: "checkbox",
                     label: "WaniKani Level",
-                    hover_tip: "Only show sentences appropriate for your current Wanikani level.",
+                    hover_tip: "Only show sentences with maximum 1 word outside of your current Wanikani level.",
                     default: state.settings.filterWaniKaniLevel,
                 },
                 filterGeneralAnime: {
@@ -372,45 +386,53 @@
     function createStyle() {
         const style = document.createElement("style");
         style.setAttribute("id", "anime-sentences-style");
+        // language=CSS
         style.innerHTML = `
-        .anime-example {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1em;
-            cursor: pointer;
-        }
+            #anime-sentences-parent > div {
+                overflow-y: auto;
+                max-height: 280px;
+            }
 
-        /* Make text and background color the same to hide text */
-        .anime-example-text .show-on-hover {
-            background: #ccc;
-            color: #ccc;
-        }
-        .anime-example-text:hover .show-on-hover {
-            background: inherit;
-            color: inherit
-        }
+            .anime-example {
+                display: flex;
+                align-items: center;
+                margin-bottom: 1em;
+                cursor: pointer;
+            }
 
-        /* Furigana hover*/
-        .anime-example-text .show-ruby-on-hover ruby rt {
-            visibility: hidden;
-        }
-        .anime-example-text:hover .show-ruby-on-hover ruby rt {
-            visibility: visible;
-        }
-        
-        .anime-example .title {
-            font-weight: 700;
-        }        
-        
-        .anime-example .ja {
-            font-size: 2em;
-        }
+            /* Make text and background color the same to hide text */
+            .anime-example-text .show-on-hover, .anime-example-text .show-on-click {
+                background: #ccc;
+                color: #ccc;
+            }
 
-        .anime-example img {
-            margin-right:1em;
-            max-width: 200px;
-        }
-    `;
+            .anime-example-text .show-on-hover:hover {
+                background: inherit;
+                color: inherit
+            }
+
+            /* Furigana hover*/
+            .anime-example-text .show-ruby-on-hover ruby rt {
+                visibility: hidden;
+            }
+
+            .anime-example-text:hover .show-ruby-on-hover ruby rt {
+                visibility: visible;
+            }
+
+            .anime-example .title {
+                font-weight: 700;
+            }
+
+            .anime-example .ja {
+                font-size: 2em;
+            }
+
+            .anime-example img {
+                margin-right: 1em;
+                max-width: 200px;
+            }
+        `;
 
         document.querySelector("head").append(style);
     }
