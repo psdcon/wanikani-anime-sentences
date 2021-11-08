@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Anime Sentences
 // @description  Adds example sentences from anime movies and shows for vocabulary
-// @version      1.1.0
+// @version      1.1.1
 // @author       psdcon
 // @namespace    wkanimesentences
 
@@ -34,11 +34,13 @@
     let state = {
         settings: {
             playbackRate: 0.75,
+            fontSize : 20,
             showEnglish: 'onhover',
             showJapanese: 'always',
             showFurigana: 'onhover',
             sentenceLengthSort: 'asc',
             filterWaniKaniLevel: true,
+            showAdditionalInfo: 'all',
             filterGeneralAnime: {},
             // Ghibli films are enabled by default
             filterGhibli: {0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true},
@@ -306,6 +308,15 @@
                     hover_tip: "Speed to play back audio.",
                     default: state.settings.playbackRate
                 },
+                fontSize: {
+                    type: "number",
+                    label: "Font size",
+                    step: 1,
+                    min: 1,
+                    max: 100,
+                    hover_tip: "Font size in px.",
+                    default: state.settings.fontSize,
+                },
                 showJapanese: {
                     type: "dropdown",
                     label: "Show Japanese",
@@ -338,6 +349,17 @@
                         onclick: "On Click",
                     },
                     default: state.settings.showEnglish
+                },
+                showAdditionalInfo: {
+                    type: "dropdown",
+                    label: "Show Additional Information",
+                    hover_tip: "Adds additonal informaation to sentences.",
+                    content: {
+                        all: "Picture and Title",
+                        only_title: "Title",
+                        none: "None",
+                    },
+                    default: state.settings.showAdditionalInfo
                 },
                 tooltip: {
                     type: "section",
@@ -377,6 +399,7 @@
     function updateSettings() {
         state.settings = wkof.settings[scriptId];
         renderSentences();
+        createStyle();
     }
 
     //--------------------------------------------------------------------------------------------------------------//
@@ -384,6 +407,12 @@
     //--------------------------------------------------------------------------------------------------------------//
 
     function createStyle() {
+        let display_img = "inherit", display_title = "inherit";
+        if (state.settings.showAdditionalInfo === "only_title") display_img = "none";
+        if (state.settings.showAdditionalInfo === "none") {
+            display_img = "none";
+            display_title = "none";
+        }
         const style = document.createElement("style");
         style.setAttribute("id", "anime-sentences-style");
         // language=CSS
@@ -396,7 +425,7 @@
             .anime-example {
                 display: flex;
                 align-items: center;
-                margin-bottom: 1em;
+                margin-bottom: 1rem;
                 cursor: pointer;
             }
 
@@ -421,14 +450,16 @@
             }
 
             .anime-example .title {
+                display: ${display_title};
                 font-weight: 700;
             }
 
             .anime-example .ja {
-                font-size: 2em;
+                font-size: ${state.settings.fontSize}px;
             }
 
             .anime-example img {
+                display: ${display_img};
                 margin-right: 1em;
                 max-width: 200px;
             }
