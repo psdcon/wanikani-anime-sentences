@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wanikani Anime Sentences
-// @description  Adds example sentences from anime movies and shows for vocabulary
-// @version      1.1.0
+// @description  Adds example sentences from anime movies and shows for vocabulary from immersionkit.com
+// @version      1.1.1
 // @author       psdcon
 // @namespace    wkanimesentences
 
@@ -13,7 +13,7 @@
 // @match        https://preview.wanikani.com/review/session
 // @match        https://preview.wanikani.com/vocabulary/*
 
-// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=985948
+// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1024045
 // @copyright    2021+, Paul Connolly
 // @license      MIT; http://opensource.org/licenses/MIT
 // @run-at       document-end
@@ -39,9 +39,10 @@
             showFurigana: 'onhover',
             sentenceLengthSort: 'asc',
             filterWaniKaniLevel: true,
-            filterGeneralAnime: {},
-            // Ghibli films are enabled by default
-            filterGhibli: {0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true},
+            filterAnimeShows: {},
+            filterAnimeMovies: {},
+            // Some Ghibli films are enabled by default
+            filterGhibli: {4: true, 5: true, 6: true, 7: true, 8: true},
         },
         item: null, // current vocab from wkinfo
         userLevel: '', // most recent level progression
@@ -50,48 +51,78 @@
     };
 
     // Titles taken from https://www.immersionkit.com/information
-    const animeTitles = {
+    const animeShows = {
         0: "Angel Beats!",
-        1: "Anohana the flower we saw that day",
+        1: "Anohana: The Flower We Saw That Day",
         2: "Assassination Classroom Season 1",
         3: "Bakemonogatari",
         4: "Boku no Hero Academia Season 1",
         5: "Cardcaptor Sakura",
-        6: "Clannad",
-        7: "Code Geass Season 1",
-        8: "Death Note",
-        9: "Durarara!!",
-        10: "Erased",
-        11: "Fullmetal Alchemist Brotherhood",
-        12: "K-On!",
-        13: "Kanon (2006)",
-        14: "Kill la Kill",
-        15: "Kokoro Connect",
-        16: "Little Witch Academia",
-        17: "Mahou Shoujo Madoka Magica",
-        18: "No Game No Life",
-        19: "Noragami",
-        20: "Psycho Pass",
-        21: "Re Zero − Starting Life in Another World",
-        22: "Shirokuma Cafe",
-        23: "Steins Gate",
-        24: "Sword Art Online",
-        25: "The Garden of Words",
-        26: "The Girl Who Leapt Through Time",
-        27: "Wolf Children",
-        28: "Your Lie in April",
+        6: "Chobits",
+        7: "Clannad",
+        8: "Clannad After Story",
+        9: "Code Geass Season 1",
+        10: "Daily Lives of High School Boys",
+        11: "Death Note",
+        12: "Durarara!!",
+        13: "Erased",
+        14: "Fairy Tail",
+        15: "Fate Stay Night UBW Season 1",
+        16: "Fate Stay Night UBW Season 2",
+        17: "Fate Zero",
+        18: "From the New World",
+        19: "Fruits Basket Season 1",
+        20: "Fullmetal Alchemist Brotherhood",
+        21: "God's Blessing on this Wonderful World!",
+        22: "Haruhi Suzumiya",
+        23: "Hunter × Hunter",
+        24: "Is The Order a Rabbit",
+        25: "K-On!",
+        26: "Kanon (2006)",
+        27: "Kill la Kill",
+        28: "Kino's Journey",
+        29: "Kokoro Connect",
+        30: "Little Witch Academia",
+        31: "Mahou Shoujo Madoka Magica",
+        32: "My Little Sister Can't Be This Cute",
+        33: "New Game!",
+        34: "No Game No Life",
+        35: "Noragami",
+        36: "One Week Friends",
+        37: "Psycho Pass",
+        38: "Re:Zero − Starting Life in Another World",
+        39: "Shirokuma Cafe",
+        40: "Steins Gate",
+        41: "Sword Art Online",
+        42: "Toradora!",
+        43: "Wandering Witch The Journey of Elaina",
+        44: "Your Lie in April",
+    }
+
+    const animeMovies = {
+        0: "Only Yesterday",
+        1: "The Garden of Words",
+        2: "The Girl Who Leapt Through Time",
+        3: "The World God Only Knows",
+        4: "Weathering with You",
+        5: "Wolf Children",
+        6: "Your Name",
     }
 
     const ghibliTitles = {
         0: "Castle in the sky",
-        1: "Howl's Moving Castle",
-        2: "Kiki's Delivery Service",
-        3: "My Neighbor Totoro",
-        4: "Spirited Away",
-        5: "The Cat Returns",
-        6: "The Secret World of Arrietty",
-        7: "The Wind Rises",
-        8: "When Marnie Was There",
+        1: "From Up on Poppy Hill",
+        2: "Grave of the Fireflies",
+        3: "Howl's Moving Castle",
+        4: "Kiki's Delivery Service",
+        5: "My Neighbor Totoro",
+        6: "Princess Mononoke",
+        7: "Spirited Away",
+        8: "The Cat Returns",
+        9: "The Secret World of Arrietty",
+        10: "The Wind Rises",
+        11: "When Marnie Was There",
+        12: "Whisper of the Heart",
     }
 
     main();
@@ -173,9 +204,14 @@
     function getDesiredShows() {
         // Convert settings dictionaries to array of titles
         let titles = []
-        for (const [key, value] of Object.entries(state.settings.filterGeneralAnime)) {
+        for (const [key, value] of Object.entries(state.settings.filterAnimeShows)) {
             if (value === true) {
-                titles.push(animeTitles[key])
+                titles.push(animeShows[key])
+            }
+        }
+        for (const [key, value] of Object.entries(state.settings.filterAnimeMovies)) {
+            if (value === true) {
+                titles.push(animeMovies[key])
             }
         }
         for (const [key, value] of Object.entries(state.settings.filterGhibli)) {
@@ -189,6 +225,9 @@
     function renderSentences() {
         // Called from immersionkit response, and on settings save
         let examples = state.immersionKitData;
+        const exampleLenBeforeFilter = examples.length
+
+        // Exclude non-selected titles
         let desiredTitles = getDesiredShows()
         examples = examples.filter(ex => desiredTitles.includes(ex.deck_name))
         if (state.settings.sentenceLengthSort === 'asc') {
@@ -203,8 +242,11 @@
         let playbackRate = state.settings.playbackRate
 
         let html = '';
-        if (examples.length === 0) {
+        if (exampleLenBeforeFilter === 0) {
             html = 'No sentences found.'
+        } else if (examples.length === 0 && exampleLenBeforeFilter > 0) {
+            // TODO show which titles have how many examples
+            html = 'No sentences found for your selected movies & shows.'
         } else {
             let lim = Math.min(examples.length, 50)
 
@@ -257,7 +299,7 @@
             }
         });
 
-        // Assing onclick function to .show-on-click elements
+        // Assigning onclick function to .show-on-click elements
         document.querySelectorAll(".show-on-click").forEach((a) => {
             a.onclick = function () {
                 this.classList.toggle('show-on-click');
@@ -331,7 +373,7 @@
                 showEnglish: {
                     type: "dropdown",
                     label: "Show English",
-                    hover_tip: "Hover allows testing your understanding before seeing the answer.",
+                    hover_tip: "Hover or click allows testing your understanding before seeing the answer.",
                     content: {
                         always: "Always",
                         onhover: "On Hover",
@@ -343,30 +385,43 @@
                     type: "section",
                     label: "Filters"
                 },
-                filterWaniKaniLevel: {
-                    type: "checkbox",
-                    label: "WaniKani Level",
-                    hover_tip: "Only show sentences with maximum 1 word outside of your current Wanikani level.",
-                    default: state.settings.filterWaniKaniLevel,
-                },
-                filterGeneralAnime: {
-                    type: "list",
-                    label: "Anime",
-                    multi: true,
-                    size: 6,
-                    hover_tip: "Select which anime you'd like to see examples from.",
-                    default: state.settings.filterGeneralAnime,
-                    content: animeTitles
-                },
                 filterGhibli: {
                     type: "list",
-                    label: "Ghibli",
+                    label: "Ghibli Movies",
                     multi: true,
                     size: 6,
                     hover_tip: "Select which Studio Ghibli movies you'd like to see examples from.",
                     default: state.settings.filterGhibli,
                     content: ghibliTitles
-                }
+                },
+                filterAnimeMovies: {
+                    type: "list",
+                    label: "Anime Movies",
+                    multi: true,
+                    size: 6,
+                    hover_tip: "Select which anime movies you'd like to see examples from.",
+                    default: state.settings.filterAnimeMovies,
+                    content: animeMovies
+                },
+                filterAnimeShows: {
+                    type: "list",
+                    label: "Anime Shows",
+                    multi: true,
+                    size: 6,
+                    hover_tip: "Select which anime shows you'd like to see examples from.",
+                    default: state.settings.filterAnimeShows,
+                    content: animeShows
+                },
+                filterWaniKaniLevel: {
+                    type: "checkbox",
+                    label: "WaniKani Level",
+                    hover_tip: "Only show sentences with maximum 1 word outside of your current WaniKani level.",
+                    default: state.settings.filterWaniKaniLevel,
+                },
+                credits: {
+                    type: "section",
+                    label: "Powered by immersionkit.com"
+                },
             }
         };
         let dialog = new wkof.Settings(config);
