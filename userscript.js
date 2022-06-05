@@ -13,7 +13,7 @@
 // @match        https://preview.wanikani.com/review/session
 // @match        https://preview.wanikani.com/vocabulary/*
 
-// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1024045
+// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1057854
 // @copyright    2021+, Paul Connolly
 // @license      MIT; http://opensource.org/licenses/MIT
 // @run-at       document-end
@@ -146,7 +146,7 @@
                 .then(callback);
         } else {
             console.warn(
-                `${scriptName}: You are not using Wanikani Open Framework which this script utlizes to see the kanji you learned and highlights it with a different color, it also provides the settings dialog for the script. You can still use Advanced Context Sentence normally though`
+                `${scriptName}: You are not using Wanikani Open Framework which this script utilizes to provide the settings dialog for the script. You can still use ${scriptName} normally though`
             );
             callback();
         }
@@ -167,8 +167,7 @@
         let parentEl = document.createElement("div");
         parentEl.setAttribute("id", 'anime-sentences-parent')
 
-        let header = state.item.on !== 'itemPage' ? document.createElement("h2") : document.createElement("h3");
-        header.innerText = 'Anime Sentences'
+        let header = ['Anime Sentences']
 
         const settingsBtn = document.createElement("i");
         settingsBtn.setAttribute("class", "fa fa-gear");
@@ -177,16 +176,15 @@
         let sentencesEl = document.createElement("div");
         sentencesEl.innerText = 'Loading...'
 
-        header.append(settingsBtn)
-        parentEl.append(header)
+        header.push(settingsBtn)
         parentEl.append(sentencesEl)
         state.sentencesEl = sentencesEl
 
         if (state.item.injector) {
             if (state.item.on === 'lesson') {
-                state.item.injector.appendAtTop(null, parentEl)
+                state.item.injector.appendAtTop(header, parentEl)
             } else { // itemPage, review
-                state.item.injector.append(null, parentEl)
+                state.item.injector.append(header, parentEl)
             }
         }
 
@@ -319,7 +317,8 @@
         state.settings = wkof.settings[scriptId];
     }
 
-    function openSettings() {
+    function openSettings(e) {
+		e.stopPropagation();
         let config = {
             script_id: scriptId,
             title: scriptName,
