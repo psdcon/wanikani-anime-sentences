@@ -458,6 +458,7 @@
             .anime-example-text .show-on-hover, .anime-example-text .show-on-click {
                 background: #ccc;
                 color: #ccc;
+                text-shadow: none;
             }
 
             .anime-example-text .show-on-hover:hover {
