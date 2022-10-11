@@ -13,7 +13,7 @@
 // @match        https://preview.wanikani.com/review/session
 // @match        https://preview.wanikani.com/vocabulary/*
 
-// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1102710
+// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1103761
 // @copyright    2021+, Paul Connolly
 // @license      MIT; http://opensource.org/licenses/MIT
 // @run-at       document-end
