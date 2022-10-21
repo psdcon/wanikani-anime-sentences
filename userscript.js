@@ -5,7 +5,6 @@
 // @author       psdcon
 // @namespace    wkanimesentences
 
-// @include      /^https://(www|preview).wanikani.com//
 // @match        https://www.wanikani.com/lesson/session
 // @match        https://www.wanikani.com/review/session
 // @match        https://www.wanikani.com/vocabulary/*
@@ -13,7 +12,7 @@
 // @match        https://preview.wanikani.com/review/session
 // @match        https://preview.wanikani.com/vocabulary/*
 
-// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1103761
+// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1107823
 // @copyright    2021+, Paul Connolly
 // @license      MIT; http://opensource.org/licenses/MIT
 // @run-at       document-end
@@ -153,7 +152,7 @@
     }
 
     function getLevel() {
-        wkof.Apiv2.fetch_endpoint('level_progressions', options).then((response) => {
+        wkof.Apiv2.fetch_endpoint('level_progressions', (window.unsafeWindow ?? window).options ?? analyticsOptions).then((response) => {
             state.userLevel = response.data[response.data.length - 1].data.level
         });
     }
@@ -262,7 +261,7 @@
             <div class="title" title="${example.id}">${example.deck_name}</div>
             <div class="ja">
                 <span class="${showJapanese === 'onhover' ? 'show-on-hover' : ''} ${showFurigana === 'onhover' ? 'show-ruby-on-hover' : ''}  ${showJapanese === 'onclick' ? 'show-on-click' : ''}">${japaneseText}</span>
-                <span><button class="audio-btn audio-idle"></button></span>
+                <span><button class="audio-btn audio-idle fa-solid fa-volume-off"></button></span>
                 <audio src="${example.sound_url}"></audio>
             </div>
             <div class="en">
@@ -281,10 +280,10 @@
             a.playbackRate = playbackRate
             let button = a.parentNode.querySelector('button')
             a.onplay = () => {
-                button.setAttribute("class", "audio-btn audio-play")
+                button.setAttribute("class", "audio-btn audio-play fa-solid fa-volume-high")
             };
             a.onended = () => {
-                button.setAttribute('class', "audio-btn audio-idle")
+                button.setAttribute('class', "audio-btn audio-idle fa-solid fa-volume-off")
             };
         })
 
@@ -445,6 +444,11 @@
             #anime-sentences-parent > div {
                 overflow-y: auto;
                 max-height: 280px;
+            }
+
+            #anime-sentences-parent .fa-solid {
+                border: none;
+                font-size: 100%;
             }
 
             .anime-example {
