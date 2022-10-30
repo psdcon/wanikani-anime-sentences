@@ -1,18 +1,14 @@
 // ==UserScript==
 // @name         Wanikani Anime Sentences
 // @description  Adds example sentences from anime movies and shows for vocabulary from immersionkit.com
-// @version      1.1.1
+// @version      1.1.2
 // @author       psdcon
 // @namespace    wkanimesentences
 
-// @match        https://www.wanikani.com/lesson/session
-// @match        https://www.wanikani.com/review/session
-// @match        https://www.wanikani.com/vocabulary/*
-// @match        https://preview.wanikani.com/lesson/session
-// @match        https://preview.wanikani.com/review/session
-// @match        https://preview.wanikani.com/vocabulary/*
+// @match        https://www.wanikani.com/*
+// @match        https://preview.wanikani.com/*
 
-// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1107823
+// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1111117
 // @copyright    2021+, Paul Connolly
 // @license      MIT; http://opensource.org/licenses/MIT
 // @run-at       document-end
