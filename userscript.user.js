@@ -1,19 +1,14 @@
 // ==UserScript==
 // @name         Wanikani Anime Sentences
 // @description  Adds example sentences from anime movies and shows for vocabulary from immersionkit.com
-// @version      1.1.1
+// @version      1.1.3
 // @author       psdcon
 // @namespace    wkanimesentences
 
-// @include      /^https://(www|preview).wanikani.com//
-// @match        https://www.wanikani.com/lesson/session
-// @match        https://www.wanikani.com/review/session
-// @match        https://www.wanikani.com/vocabulary/*
-// @match        https://preview.wanikani.com/lesson/session
-// @match        https://preview.wanikani.com/review/session
-// @match        https://preview.wanikani.com/vocabulary/*
+// @match        https://www.wanikani.com/*
+// @match        https://preview.wanikani.com/*
 
-// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1024045
+// @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1166918
 // @copyright    2021+, Paul Connolly
 // @license      MIT; http://opensource.org/licenses/MIT
 // @run-at       document-end
@@ -146,14 +141,14 @@
                 .then(callback);
         } else {
             console.warn(
-                `${scriptName}: You are not using Wanikani Open Framework which this script utlizes to see the kanji you learned and highlights it with a different color, it also provides the settings dialog for the script. You can still use Advanced Context Sentence normally though`
+                `${scriptName}: You are not using Wanikani Open Framework which this script utilizes to provide the settings dialog for the script. You can still use ${scriptName} normally though`
             );
             callback();
         }
     }
 
     function getLevel() {
-        wkof.Apiv2.fetch_endpoint('level_progressions', options).then((response) => {
+        wkof.Apiv2.fetch_endpoint('level_progressions', (window.unsafeWindow ?? window).options ?? analyticsOptions).then((response) => {
             state.userLevel = response.data[response.data.length - 1].data.level
         });
     }
@@ -167,8 +162,7 @@
         let parentEl = document.createElement("div");
         parentEl.setAttribute("id", 'anime-sentences-parent')
 
-        let header = state.item.on !== 'itemPage' ? document.createElement("h2") : document.createElement("h3");
-        header.innerText = 'Anime Sentences'
+        let header = ['Anime Sentences']
 
         const settingsBtn = document.createElement("i");
         settingsBtn.setAttribute("class", "fa fa-gear");
@@ -177,16 +171,15 @@
         let sentencesEl = document.createElement("div");
         sentencesEl.innerText = 'Loading...'
 
-        header.append(settingsBtn)
-        parentEl.append(header)
+        header.push(settingsBtn)
         parentEl.append(sentencesEl)
         state.sentencesEl = sentencesEl
 
         if (state.item.injector) {
             if (state.item.on === 'lesson') {
-                state.item.injector.appendAtTop(null, parentEl)
+                state.item.injector.appendAtTop(header, parentEl)
             } else { // itemPage, review
-                state.item.injector.append(null, parentEl)
+                state.item.injector.append(header, parentEl)
             }
         }
 
@@ -264,7 +257,7 @@
             <div class="title" title="${example.id}">${example.deck_name}</div>
             <div class="ja">
                 <span class="${showJapanese === 'onhover' ? 'show-on-hover' : ''} ${showFurigana === 'onhover' ? 'show-ruby-on-hover' : ''}  ${showJapanese === 'onclick' ? 'show-on-click' : ''}">${japaneseText}</span>
-                <span><button class="audio-btn audio-idle"></button></span>
+                <span><button class="audio-btn audio-idle fa-solid fa-volume-off"></button></span>
                 <audio src="${example.sound_url}"></audio>
             </div>
             <div class="en">
@@ -283,10 +276,10 @@
             a.playbackRate = playbackRate
             let button = a.parentNode.querySelector('button')
             a.onplay = () => {
-                button.setAttribute("class", "audio-btn audio-play")
+                button.setAttribute("class", "audio-btn audio-play fa-solid fa-volume-high")
             };
             a.onended = () => {
-                button.setAttribute('class', "audio-btn audio-idle")
+                button.setAttribute('class', "audio-btn audio-idle fa-solid fa-volume-off")
             };
         })
 
@@ -319,7 +312,8 @@
         state.settings = wkof.settings[scriptId];
     }
 
-    function openSettings() {
+    function openSettings(e) {
+		e.stopPropagation();
         let config = {
             script_id: scriptId,
             title: scriptName,
@@ -448,6 +442,11 @@
                 max-height: 280px;
             }
 
+            #anime-sentences-parent .fa-solid {
+                border: none;
+                font-size: 100%;
+            }
+
             .anime-example {
                 display: flex;
                 align-items: center;
@@ -459,6 +458,7 @@
             .anime-example-text .show-on-hover, .anime-example-text .show-on-click {
                 background: #ccc;
                 color: #ccc;
+                text-shadow: none;
             }
 
             .anime-example-text .show-on-hover:hover {
