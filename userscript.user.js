@@ -453,6 +453,10 @@
                 margin-bottom: 1em;
                 cursor: pointer;
             }
+            
+            .audio-btn {
+                background-color: transparent;
+            }
 
             /* Make text and background color the same to hide text */
             .anime-example-text .show-on-hover, .anime-example-text .show-on-click {
